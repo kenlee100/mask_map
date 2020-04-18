@@ -64,8 +64,8 @@ function getData(){
 		
 		maskData = res.data.features;
 		// console.log(maskData);
-		loaderSetting = true;
-		loadingOverlay()
+		// loaderSetting = true;
+		// loadingOverlay()
 		domRender(maskData)
 		// loader.classList.remove('show');
 		// domRender()
