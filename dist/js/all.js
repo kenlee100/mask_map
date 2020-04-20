@@ -104,7 +104,7 @@ function pagination(){
 
 }
 
-//顯示資料到畫面
+//顯示清單資料到畫面
 function domRender(data){
 	var dataList = document.getElementsByClassName('data-list')[0];
 	
@@ -139,67 +139,100 @@ function domRender(data){
 }
 
 var search = document.getElementsByClassName('js-search')[0];
-var city = document.getElementsByClassName('js-city')[0];
-// var area = document.getElementsByClassName('area')[0];
+var citySelect = document.getElementsByClassName('js-city')[0];
+var areaSelect = document.getElementsByClassName('js-area')[0];
 
 console.log(locationData);
 
-var citySelect = document.getElementsByClassName('js-city')[0];
+
+//輸出縣市資料到select
 function cityRender(){
-	
-	var cityHtml = ''
+	var cityHtml = '<option>選擇縣市</option>';
 	locationData.forEach(function(item){
 		cityHtml+=`
-				<option>${item.CityName}</option>
+				<option value="${item.CityName}">${item.CityName}</option>
 			`
 	})
 	citySelect.innerHTML = cityHtml;
 }
-cityRender()
 
-var areaSelect = document.getElementsByClassName('js-city')[0];
-function areaRender(){
-	// console.log(el);
+
+
+// function cityRender(){
+// 	// console.log(el);
 	
-	var cityHtml = ''
-	locationData.forEach(function(item,index){
-		cityHtml+=`
-				<option>${item[index]}</option>
-			`
-		// console.log(item.AreaList);
-		
-	})
-	// areaSelect.innerHTML = cityHtml;
-}
-areaRender()
+// 	var cityHtml = ''
+// 	locationData.forEach(function(item){
+// 		cityHtml+=`
+// 				<option>${item}</option>
+// 			`
+// 	})
+	
+// }
+// cityRender()
 
-//篩選地區
-function filterCounty(county){
-	var filterData = maskData.filter(function(item){
-		if(county === undefined) return item;
-		return county=== item.properties.county;
-	})	
-	console.log(county)
-	domRender(filterData)
-	dataLength=filterData.length;
+
+
+//輸出地區資料到select
+function areaRender(value){
+	var areaHtml = '<option>選擇地區</option>';
+	//比對縣市資料是否等於select所選的值
+	var area = locationData.filter(function(item){
+		return item.CityName ===value
+	})
+	area[0].AreaList.forEach(function(item){
+		areaHtml+=`
+			<option value="${item.AreaName}">${item.AreaName}</option>`;
+	})
+	areaSelect.innerHTML = areaHtml;
+}
+
+//篩選縣市
+function filterLocation1(value){
+	var filterCity = maskData.filter(function(item){
+		if(value === undefined) return item;
+		return value=== item.properties.county;
+	})
+	domRender(filterCity)
+	dataLength=filterCity.length;
 	amount.textContent=dataLength
 }
 
-// 搜尋
+//篩選地區
+function filterLocation2(value){
+	var filterArea = maskData.filter(function(item){
+		if(value === undefined) return item;
+		return value=== item.properties.town;
+	})
+	domRender(filterArea)
+	dataLength=filterArea.length;
+	amount.textContent=dataLength
+}
+
+//搜尋
 search.addEventListener('keyup',function(){
-	filterCounty(this.value)
+	filterLocation1(this.value)
+	filterLocation2(this.value)
 	console.log(this.value);
-	
-})
-city.addEventListener('change',function(){
-	filterCounty(this.value)
-})
+});
+
+citySelect.addEventListener('change',function(){
+	filterLocation1(this.value)
+	areaRender(this.value)
+});
+
+areaSelect.addEventListener('change',function(){
+	filterLocation2(this.value)
+});
 
 
 //初始
 function init(){
 	dayRender()
-	// getOpenData()
+	getOpenData()
+	cityRender()
+	// areaRender('選擇縣市')
+	// filterLocation2('中正區')
 	// getData()
 }
 init()
