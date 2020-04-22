@@ -156,23 +156,6 @@ function cityRender(){
 	citySelect.innerHTML = cityHtml;
 }
 
-
-
-// function cityRender(){
-// 	// console.log(el);
-	
-// 	var cityHtml = ''
-// 	locationData.forEach(function(item){
-// 		cityHtml+=`
-// 				<option>${item}</option>
-// 			`
-// 	})
-	
-// }
-// cityRender()
-
-
-
 //輸出地區資料到select
 function areaRender(value){
 	var areaHtml = '<option>選擇地區</option>';
@@ -188,42 +171,85 @@ function areaRender(value){
 }
 
 //篩選縣市
+// var filterData = [];
+var cityData=null;
+var areaData=null;
+function filterLocation(type,value){
+	switch(type){
+		case 'city':
+			cityData = value;
+			break;
+		case 'area':
+			areaData = value;
+			break;
+	}
+	// console.log(value)
+
+	var filterData = maskData.filter(function(item){
+		if(cityData === undefined) return item;
+		return cityData=== item.properties.county;
+	})
+	.filter(function(item){
+		if(areaData === undefined) return item;
+		return areaData=== item.properties.town;
+	})
+	console.log(filterData);
+	
+	domRender(filterData)
+	// domRender(filterCity)
+	// dataLength=filterCity.length;
+	// amount.textContent=dataLength
+}
+
 function filterLocation1(value){
-	var filterCity = maskData.filter(function(item){
-		if(value === undefined) return item;
+	filterData = maskData.filter(function(item){
+		// if(value === undefined) return item;
 		return value=== item.properties.county;
 	})
-	domRender(filterCity)
-	dataLength=filterCity.length;
+	domRender(filterData)
+	dataLength=filterData.length;
 	amount.textContent=dataLength
 }
 
 //篩選地區
 function filterLocation2(value){
-	var filterArea = maskData.filter(function(item){
-		if(value === undefined) return item;
+	filterData = maskData.filter(function(item){
+		// if(value === undefined) return item;
 		return value=== item.properties.town;
 	})
-	domRender(filterArea)
-	dataLength=filterArea.length;
+	console.log(filterData);
+	
+	domRender(filterData)
+	dataLength=filterData.length;
 	amount.textContent=dataLength
 }
 
 //搜尋
 search.addEventListener('keyup',function(){
-	filterLocation1(this.value)
-	filterLocation2(this.value)
+	// filterLocation1(this.value)
+	// filterLocation(this.value)
+	// filterLocation2(this.value)
 	console.log(this.value);
 });
 
 citySelect.addEventListener('change',function(){
-	filterLocation1(this.value)
+	filterLocation('city',this.value)
+	// filterLocation1(this.value)
 	areaRender(this.value)
 });
 
 areaSelect.addEventListener('change',function(){
-	filterLocation2(this.value)
+	filterLocation('area',this.value)
+	// console.log(this.value);
+	
+	// filterLocation2(this.value)
 });
+
+
+var map = L.map('js-map').setView([51.505, -0.09], 13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+}).addTo(map);
 
 
 //初始
