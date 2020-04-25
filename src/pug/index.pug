@@ -3,19 +3,22 @@ extends layout/layout
 block page-content
 	
 	.sidenav.open
-		header.header
-			h2#js-dayText
-			p#js-dateText
-		p 共有
-			span.js-amount.amount
-			|筆資料
-		p.even 身分證 0,2,4,6,8 可購買
-		p.odd 身分證 1,3,5,7,9 可購買
-		select.area.js-city
-			option 選擇縣市
-		select.area.js-area
-			option 選擇地區
-		.search 
-			input.js-search(type="text" placeholder="搜尋")
+		nav
+			header.header
+				h2#js-dayText
+				p#js-dateText
+			p 共有
+				span.js-amount.amount
+				|筆資料
+			p.even 身分證末碼 0,2,4,6,8 可購買
+			p.odd 身分證末碼 1,3,5,7,9 可購買
+			select.area.js-city
+				option 選擇縣市
+			select.area.js-area
+				option 全部地區
+			.search 
+				input.js-search(type="text" placeholder="搜尋")
 		.data-list
 			//- .data-list__item
+	.main-conetnt
+		#js-map.map

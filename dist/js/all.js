@@ -65,13 +65,17 @@ function getOpenData(){
 	var xhr = new XMLHttpRequest();
 	xhr.open('get',opendata,true);
 	xhr.send(null)
-	console.log(xhr);
+	// console.log(xhr);
 	xhr.onreadystatechange = function(){
 		if(xhr.readyState === 4 && xhr.status ===200){
-			maskData = JSON.parse(xhr.responseText).features
-			domRender(maskData)
+			maskData = JSON.parse(xhr.responseText).features;
+			// console.log(maskData);
+			loaderSetting = true;
+			loadingOverlay()
+			setMarker()
+			// domRender(maskData)
 		} else {
-			console.log('資料錯誤');
+			// console.log('資料錯誤');
 			
 		}
 	}
@@ -83,7 +87,7 @@ function getData(){
 	.then(function(res){
 		maskData = res.data.features;
 		// console.log(maskData);
-		// loaderSetting = true;
+		
 		// loadingOverlay()
 		domRender(maskData)
 		// loader.classList.remove('show');
@@ -93,9 +97,9 @@ function getData(){
 
 function loadingOverlay(){
 	if(loaderSetting){
-		loader.classList.add('show');
+		loader.classList.add('hide');
 	}else {
-		loader.classList.remove('show');
+		loader.classList.remove('hide');
 	}
 }
 
@@ -104,32 +108,50 @@ function pagination(){
 
 }
 
+//判斷有資料才顯示內容，否則不顯示
+function judgmentData(showData,content){
+	return showData===0?content:'';
+}
+
+
+var dataList = document.getElementsByClassName('data-list')[0];
+
 //顯示清單資料到畫面
 function domRender(data){
-	var dataList = document.getElementsByClassName('data-list')[0];
 	
 	dataLength=maskData.length;	
 	amount.textContent = dataLength;
 
 	var html ='';	
+	var tipShow =false;
 	dataList.innerHTML='';
+	if(data.length===0){
+		html=`<p class="tip">無資料，請重新查詢</p>`
+	}
+	
 	data.forEach(function(item){
+		var itemCoordinates = item.geometry.coordinates;
+		var itemContent = item.properties;
+		// var item_mask_child = item.properties.mask_child===0? '無口罩':'';
 		html+=`
-				<div class="data-list__item">
+				<div class="data-list__item" data-lat="${itemCoordinates[1]}" data-lng="${itemCoordinates[0]}">
 					<div class="item-content">
-						<h3 class="item-content__title">${item.properties.name}</h3>
-						<p class="item-content__info">${item.properties.address}</p>
-						<p class="item-content__info">${item.properties.phone}</p>
-						<p class="item-content__info">
+						<h3 class="item-content__title">${itemContent.name}</h3>
+						<div class="item-content__info">${itemContent.address}</div>
+						<div class="item-content__info">${itemContent.phone}</div>
+						<div class="item-content__info">
 							<div>
 								<span>成人口罩:</span>
-								<span>${item.properties.mask_adult}</span>
+								<span>${itemContent.mask_adult}</span>
 							</div>
+
 							<div>
 								<span>小孩口罩:</span>
-								<span>${item.properties.mask_child}</span>
+								<span>${itemContent.mask_child}</span>
 							</div>
-						</p>
+
+						</div>
+						<div class="item-content__info">${judgmentData(itemContent.mask_adult,'無口罩')}</div>
 					</div>
 				</div>
 				`
@@ -142,7 +164,10 @@ var search = document.getElementsByClassName('js-search')[0];
 var citySelect = document.getElementsByClassName('js-city')[0];
 var areaSelect = document.getElementsByClassName('js-area')[0];
 
-console.log(locationData);
+// console.log(locationData);
+
+
+
 
 
 //輸出縣市資料到select
@@ -156,31 +181,14 @@ function cityRender(){
 	citySelect.innerHTML = cityHtml;
 }
 
-
-
-// function cityRender(){
-// 	// console.log(el);
-	
-// 	var cityHtml = ''
-// 	locationData.forEach(function(item){
-// 		cityHtml+=`
-// 				<option>${item}</option>
-// 			`
-// 	})
-	
-// }
-// cityRender()
-
-
-
 //輸出地區資料到select
 function areaRender(value){
-	var areaHtml = '<option>選擇地區</option>';
+	var areaHtml = '<option>全部地區</option>';
 	//比對縣市資料是否等於select所選的值
-	var area = locationData.filter(function(item){
+	var areaFilter = locationData.filter(function(item){
 		return item.CityName ===value
 	})
-	area[0].AreaList.forEach(function(item){
+	areaFilter[0].AreaList.forEach(function(item){
 		areaHtml+=`
 			<option value="${item.AreaName}">${item.AreaName}</option>`;
 	})
@@ -188,51 +196,177 @@ function areaRender(value){
 }
 
 //篩選縣市
-function filterLocation1(value){
-	var filterCity = maskData.filter(function(item){
-		if(value === undefined) return item;
-		return value=== item.properties.county;
+
+
+var cityData='';
+var areaData='';
+function filterLocation(type,value){
+	// console.log(value);
+	switch(type){
+		case 'city':
+			cityData = value;
+			break;
+		case 'area':
+			areaData = value;
+			break;
+	}
+	
+	var filterData=[];
+	
+	// console.log(filterData)
+	console.log(type,value)
+	// if(filterData.length===0)return console.log('1234')
+	filterData = maskData.filter(function(item){
+		if(cityData===undefined)return item.properties.county
+		return cityData===item.properties.county;
 	})
-	domRender(filterCity)
-	dataLength=filterCity.length;
+	.filter(function(item){
+		if(areaData==='') return item.properties.town;
+		return areaData=== item.properties.town;
+	})
+
+	// if(filterData.length===0) return ;
+	// console.log('cityData',cityData);
+	// console.log('areaData',areaData);
+
+	//每次執行清空區域的值，選縣市才會顯示資料
+	areaData='';
+	
+	domRender(filterData)
+
+	dataLength=filterData.length;
 	amount.textContent=dataLength
 }
 
-//篩選地區
-function filterLocation2(value){
-	var filterArea = maskData.filter(function(item){
-		if(value === undefined) return item;
-		return value=== item.properties.town;
-	})
-	domRender(filterArea)
-	dataLength=filterArea.length;
-	amount.textContent=dataLength
-}
+
 
 //搜尋
 search.addEventListener('keyup',function(){
-	filterLocation1(this.value)
-	filterLocation2(this.value)
+	
 	console.log(this.value);
+	filterLocation('city',this.value)
 });
 
 citySelect.addEventListener('change',function(){
-	filterLocation1(this.value)
+	filterLocation('city',this.value)
 	areaRender(this.value)
+	getCoordinates()
 });
 
 areaSelect.addEventListener('change',function(){
-	filterLocation2(this.value)
+	filterLocation('area',this.value)
+	getCoordinates()
 });
 
+//地圖
+
+var map = L.map('js-map', {
+    center: [22.604964, 120.300476],
+    zoom: 10
+});
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+}).addTo(map);
+
+var markers = new L.MarkerClusterGroup().addTo(map);
+
+
+//設定marker
+
+function setMarker(){
+	var popHtml=null;
+	// console.log(maskData);
+	
+	maskData.forEach(function(item){
+		var itemCoordinates = item.geometry.coordinates;
+		popHtml = popRender(item)
+		// var itemContent = item.properties;
+		// popHtml=itemContent.name
+		// popHtml=`
+		// <div class="marker>
+		// 	<div class="marker-content">
+		// 		<h3 class="marker-content__title">${itemContent.name}</h3>
+		// 		<div class="marker-content__info">${itemContent.address}</div>
+		// 		<div class="marker-content__info">${itemContent.phone}</div>
+		// 		<div class="marker-content__info">
+		// 			<div>
+		// 				<span>成人口罩:</span>
+		// 				<span>${itemContent.mask_adult}</span>
+		// 			</div>
+
+		// 			<div>
+		// 				<span>小孩口罩:</span>
+		// 				<span>${itemContent.mask_child}</span>
+		// 			</div>
+		// 		</div>
+		// 	</div>
+		// </div>
+		// 	`
+		markerGroup(itemCoordinates[1], itemCoordinates[0],popHtml)
+	})
+	map.addLayer(markers);
+}
+
+
+function popRender(data){
+	// var itemCoordinates = data.geometry.coordinates;
+	var itemContent = data.properties;
+	return `
+	<div class="marker">
+		<div class="marker-content">
+			<h3 class="marker-content__title">${itemContent.name}</h3>
+			<div class="marker-content__info">${itemContent.address}</div>
+			<div class="marker-content__info">${itemContent.phone}</div>
+			<div class="marker-content__info">
+				<div>
+					<span>成人口罩:</span>
+					<span>${itemContent.mask_adult}</span>
+				</div>
+
+				<div>
+					<span>小孩口罩:</span>
+					<span>${itemContent.mask_child}</span>
+				</div>
+			</div>
+		</div>
+	</div>
+		`
+}
+
+function markerGroup(lat,lan,renderData) {
+	markers.addLayer(L.marker([lat, lan])
+		.bindPopup(renderData)
+		.openPopup()
+	)
+}
 
 //初始
 function init(){
 	dayRender()
 	getOpenData()
 	cityRender()
+	// console.log(maskData);
+	
+	// filterLocation('city','臺北市');
+	// filterLocation('area','中正區')
 	// areaRender('選擇縣市')
 	// filterLocation2('中正區')
 	// getData()
 }
 init()
+
+
+// function getCoordinates(){
+// 	console.log(this.dataset.lat,this.dataset.lng)
+// }
+function getCoordinates(){
+	dataList.querySelectorAll('.data-list__item').forEach(function(item){
+		// setMarker(item.dataset.lat,item.dataset.lng)
+		item.addEventListener('click',function(){
+			map.setView(new L.latLng(this.dataset.lat,this.dataset.lng))
+			// L.marker([this.dataset.lat,this.dataset.lng]).addTo(map)
+			// 	.bindPopup('1234')
+			// 	.openPopup();
+		})
+	})
+}
