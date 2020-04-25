@@ -72,6 +72,7 @@ function getOpenData(){
 			// console.log(maskData);
 			loaderSetting = true;
 			loadingOverlay()
+			setMarker()
 			// domRender(maskData)
 		} else {
 			// console.log('資料錯誤');
@@ -133,7 +134,7 @@ function domRender(data){
 		var itemContent = item.properties;
 		// var item_mask_child = item.properties.mask_child===0? '無口罩':'';
 		html+=`
-				<div class="data-list__item" data-lon="${itemCoordinates[0]}" data-lat="${itemCoordinates[1]}">
+				<div class="data-list__item" data-lat="${itemCoordinates[1]}" data-lng="${itemCoordinates[0]}">
 					<div class="item-content">
 						<h3 class="item-content__title">${itemContent.name}</h3>
 						<div class="item-content__info">${itemContent.address}</div>
@@ -165,9 +166,7 @@ var areaSelect = document.getElementsByClassName('js-area')[0];
 
 // console.log(locationData);
 
-function getCoordinates(){
-	console.log(this.dataset.lat,this.dataset.lon)
-}
+
 
 
 
@@ -251,32 +250,102 @@ search.addEventListener('keyup',function(){
 citySelect.addEventListener('change',function(){
 	filterLocation('city',this.value)
 	areaRender(this.value)
+	getCoordinates()
 });
 
 areaSelect.addEventListener('change',function(){
 	filterLocation('area',this.value)
-	
+	getCoordinates()
 });
 
 //地圖
+
 var map = L.map('js-map', {
     center: [22.604964, 120.300476],
-    zoom: 16
+    zoom: 10
 });
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 }).addTo(map);
 
-L.marker([22.604964, 120.300476]).addTo(map)
-    .bindPopup('<h1>高雄軟體園區</h1>')
-    .openPopup();
+var markers = new L.MarkerClusterGroup().addTo(map);
+
+
+//設定marker
+
+function setMarker(){
+	var popHtml=null;
+	// console.log(maskData);
+	
+	maskData.forEach(function(item){
+		var itemCoordinates = item.geometry.coordinates;
+		popHtml = popRender(item)
+		// var itemContent = item.properties;
+		// popHtml=itemContent.name
+		// popHtml=`
+		// <div class="marker>
+		// 	<div class="marker-content">
+		// 		<h3 class="marker-content__title">${itemContent.name}</h3>
+		// 		<div class="marker-content__info">${itemContent.address}</div>
+		// 		<div class="marker-content__info">${itemContent.phone}</div>
+		// 		<div class="marker-content__info">
+		// 			<div>
+		// 				<span>成人口罩:</span>
+		// 				<span>${itemContent.mask_adult}</span>
+		// 			</div>
+
+		// 			<div>
+		// 				<span>小孩口罩:</span>
+		// 				<span>${itemContent.mask_child}</span>
+		// 			</div>
+		// 		</div>
+		// 	</div>
+		// </div>
+		// 	`
+		markerGroup(itemCoordinates[1], itemCoordinates[0],popHtml)
+	})
+	map.addLayer(markers);
+}
+
+
+function popRender(data){
+	// var itemCoordinates = data.geometry.coordinates;
+	var itemContent = data.properties;
+	return `
+	<div class="marker">
+		<div class="marker-content">
+			<h3 class="marker-content__title">${itemContent.name}</h3>
+			<div class="marker-content__info">${itemContent.address}</div>
+			<div class="marker-content__info">${itemContent.phone}</div>
+			<div class="marker-content__info">
+				<div>
+					<span>成人口罩:</span>
+					<span>${itemContent.mask_adult}</span>
+				</div>
+
+				<div>
+					<span>小孩口罩:</span>
+					<span>${itemContent.mask_child}</span>
+				</div>
+			</div>
+		</div>
+	</div>
+		`
+}
+
+function markerGroup(lat,lan,renderData) {
+	markers.addLayer(L.marker([lat, lan])
+		.bindPopup(renderData)
+		.openPopup()
+	)
+}
 
 //初始
 function init(){
 	dayRender()
 	getOpenData()
 	cityRender()
-	console.log(maskData);
+	// console.log(maskData);
 	
 	// filterLocation('city','臺北市');
 	// filterLocation('area','中正區')
@@ -286,9 +355,18 @@ function init(){
 }
 init()
 
-dataList.querySelectorAll('.data-list__item').forEach(function(item){
-	item.addEventListener('click',function(){
-		console.log(this);
-		
+
+// function getCoordinates(){
+// 	console.log(this.dataset.lat,this.dataset.lng)
+// }
+function getCoordinates(){
+	dataList.querySelectorAll('.data-list__item').forEach(function(item){
+		// setMarker(item.dataset.lat,item.dataset.lng)
+		item.addEventListener('click',function(){
+			map.setView(new L.latLng(this.dataset.lat,this.dataset.lng))
+			// L.marker([this.dataset.lat,this.dataset.lng]).addTo(map)
+			// 	.bindPopup('1234')
+			// 	.openPopup();
+		})
 	})
-})
+}
