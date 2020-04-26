@@ -1,4 +1,19 @@
+$primary-color:#11787A;
+$secondary-color:#E67E22;
 
+$item-info-title-color:#34495E;
+
+$types:(
+  sufficient:$primary-color,
+  little:$secondary-color,
+  insufficient: #70777C
+);
+@each $name, $color in $types{
+  .status-#{$name} {
+    color: white;
+    background-color: $color;
+  }
+}
 html,body{
   font-size: 16px;
   width: 100%;
@@ -13,7 +28,7 @@ html,body{
   position: fixed;
   top: 0;
   transform: translateX(-100%);
-  background-color: #ddd;
+  background-color: #FAFAFA;
   transition: transform ease-in-out .2s;
   z-index: 1001;
   &.open {
@@ -31,8 +46,21 @@ html,body{
   overflow-y: auto;
   &__item {
     padding: 10px;
+    cursor: pointer;
     &+&{
       border-top: 1px solid #000;
+    }
+  }
+  .item-content{
+    pointer-events: none;
+    color: #70777C;
+    .title {
+      color: white;
+      font-size: 14px;
+    }
+    .number {
+      color: white;
+      font-size: 32px;
     }
   }
 }

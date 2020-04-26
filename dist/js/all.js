@@ -72,7 +72,11 @@ function getOpenData(){
 			// console.log(maskData);
 			loaderSetting = true;
 			loadingOverlay()
-			setMarker()
+			
+			filterLocation('city', '臺北市');
+			// getCoordinates()
+			buildMap();
+			addMarker(maskData);
 			// domRender(maskData)
 		} else {
 			// console.log('資料錯誤');
@@ -132,6 +136,13 @@ function domRender(data){
 	data.forEach(function(item){
 		var itemCoordinates = item.geometry.coordinates;
 		var itemContent = item.properties;
+		var itemStatus = (function(){
+			if (item.properties.mask_adult ===0){
+				return 'status-insufficient'
+			} else {
+				return 'status-little'
+			}
+		}())
 		// var item_mask_child = item.properties.mask_child===0? '無口罩':'';
 		html+=`
 				<div class="data-list__item" data-lat="${itemCoordinates[1]}" data-lng="${itemCoordinates[0]}">
@@ -140,14 +151,14 @@ function domRender(data){
 						<div class="item-content__info">${itemContent.address}</div>
 						<div class="item-content__info">${itemContent.phone}</div>
 						<div class="item-content__info">
-							<div>
-								<span>成人口罩:</span>
-								<span>${itemContent.mask_adult}</span>
+							<div class="${itemStatus}">
+								<span class="title">成人口罩數量:</span>
+								<span class="number">${itemContent.mask_adult}</span>片
 							</div>
 
-							<div>
-								<span>小孩口罩:</span>
-								<span>${itemContent.mask_child}</span>
+							<div class="${itemStatus}">
+								<span class="title">小孩口罩數量:</span>
+								<span class="number">${itemContent.mask_child}</span>片
 							</div>
 
 						</div>
@@ -250,59 +261,73 @@ search.addEventListener('keyup',function(){
 citySelect.addEventListener('change',function(){
 	filterLocation('city',this.value)
 	areaRender(this.value)
-	getCoordinates()
+	// getCoordinates()
 });
 
 areaSelect.addEventListener('change',function(){
 	filterLocation('area',this.value)
-	getCoordinates()
+	// getCoordinates()
 });
 
 //地圖
+var map = {}
 
-var map = L.map('js-map', {
-    center: [22.604964, 120.300476],
-    zoom: 10
-});
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-}).addTo(map);
+function buildMap(){
+	map = L.map('js-map', {
+		center: [22.604964, 120.300476],
+		zoom: 10
+	});
+	L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+		attribution: '作者 Ken || 設計師  '
+	}).addTo(map);
+	// 使用 control.locate 套件
+	L.control
+			.locate({
+					showPopup: false
+			})
+			.addTo(map)
+			.start();
+}
 
-var markers = new L.MarkerClusterGroup().addTo(map);
+var markers = new L.MarkerClusterGroup();
 
 
 //設定marker
-
-function setMarker(){
-	var popHtml=null;
+function addMarker(){
+	var popHtml='';
 	// console.log(maskData);
 	
 	maskData.forEach(function(item){
 		var itemCoordinates = item.geometry.coordinates;
-		popHtml = popRender(item)
-		// var itemContent = item.properties;
-		// popHtml=itemContent.name
-		// popHtml=`
-		// <div class="marker>
-		// 	<div class="marker-content">
-		// 		<h3 class="marker-content__title">${itemContent.name}</h3>
-		// 		<div class="marker-content__info">${itemContent.address}</div>
-		// 		<div class="marker-content__info">${itemContent.phone}</div>
-		// 		<div class="marker-content__info">
-		// 			<div>
-		// 				<span>成人口罩:</span>
-		// 				<span>${itemContent.mask_adult}</span>
-		// 			</div>
+		// popHtml = popRender(item)
+		var itemContent = item.properties;
+		popHtml=itemContent.name
+		popHtml=`
+		<div class="marker>
+			<div class="marker-content">
+				<h3 class="marker-content__title">${itemContent.name}</h3>
+				<div class="marker-content__info">${itemContent.address}</div>
+				<div class="marker-content__info">${itemContent.phone}</div>
+				<div class="marker-content__info">
+					<div>
+						<span>成人口罩:</span>
+						<span>${itemContent.mask_adult}</span>
+					</div>
 
-		// 			<div>
-		// 				<span>小孩口罩:</span>
-		// 				<span>${itemContent.mask_child}</span>
-		// 			</div>
-		// 		</div>
-		// 	</div>
-		// </div>
-		// 	`
-		markerGroup(itemCoordinates[1], itemCoordinates[0],popHtml)
+					<div>
+						<span>小孩口罩:</span>
+						<span>${itemContent.mask_child}</span>
+					</div>
+				</div>
+			</div>
+		</div>
+			`;
+
+		markers.addLayer(L.marker([itemCoordinates[1], itemCoordinates[0]])
+			.bindPopup(popHtml)
+			.openPopup()
+		)
+		// markerGroup(itemCoordinates[1], itemCoordinates[0],popHtml)
 	})
 	map.addLayer(markers);
 }
@@ -333,12 +358,42 @@ function popRender(data){
 		`
 }
 
-function markerGroup(lat,lan,renderData) {
-	markers.addLayer(L.marker([lat, lan])
-		.bindPopup(renderData)
-		.openPopup()
-	)
+function markerOpen(lat,lng){
+	markers.eachLayer(function(layer){
+		var eachLat = layer._latlng.lat;
+		var eachLng = layer._latlng.lng;
+		if (eachLat === lat && eachLng === lng) {
+			markers.zoomToShowLayer(layer,function(){
+				layer.openPopup()
+			})
+		}
+	})
 }
+
+// const markerOpen = (lat, lng) => {
+// 	// 搜尋 markers 圖層下的子圖層
+// 	markers.eachLayer(layer => {
+// 		// 抓取圖層的 經緯度
+// 		const eachLat = layer._latlng.lat;
+// 		const eachLng = layer._latlng.lng;
+// 		// 如果與參數的經緯度相同，就抓取那個 layer
+// 		if (eachLat === lat && eachLng === lng) {
+// 			// zoomToShowLayer 這個是 MarkerClusterGroup 給的函式
+// 			// 方法是調用 MarkerClusterGroup 下的子圖層
+// 			markers.zoomToShowLayer(layer, () =>
+// 				// 打開 bindPopup 的 HTML
+// 				layer.openPopup()
+// 			);
+// 		}
+// 	});
+// };
+
+// function markerGroup(lat,lan,renderData) {
+// 	markers.addLayer(L.marker([lat, lan])
+// 		.bindPopup(renderData)
+// 		.openPopup()
+// 	)
+// }
 
 //初始
 function init(){
@@ -347,7 +402,7 @@ function init(){
 	cityRender()
 	// console.log(maskData);
 	
-	// filterLocation('city','臺北市');
+	
 	// filterLocation('area','中正區')
 	// areaRender('選擇縣市')
 	// filterLocation2('中正區')
@@ -359,14 +414,28 @@ init()
 // function getCoordinates(){
 // 	console.log(this.dataset.lat,this.dataset.lng)
 // }
-function getCoordinates(){
-	dataList.querySelectorAll('.data-list__item').forEach(function(item){
-		// setMarker(item.dataset.lat,item.dataset.lng)
-		item.addEventListener('click',function(){
-			map.setView(new L.latLng(this.dataset.lat,this.dataset.lng))
-			// L.marker([this.dataset.lat,this.dataset.lng]).addTo(map)
-			// 	.bindPopup('1234')
-			// 	.openPopup();
-		})
-	})
+// function getCoordinates(){
+	
+// 	dataList.querySelectorAll('.data-list__item').forEach(function(item){
+		
+// 		// addMarker(item.dataset.lat,item.dataset.lng)
+// 		item.addEventListener('click',function(){
+// 			map.setView(new L.latLng(Number(this.dataset.lat), Number(this.dataset.lng)))
+// 			// L.marker([Number(this.dataset.lat), Number(this.dataset.lng)]).addTo(map)
+// 			// 	.bindPopup('1234')
+// 			// 	.openPopup();
+// 			// console.log(Number(this.dataset.lat), Number(this.dataset.lng));
+			
+// 			// markerOpen(Number(this.dataset.lat), Number(this.dataset.lng))
+// 		})
+// 	})
+// }
+
+//點選列表資料 移動圖釘到座標，並打開彈窗資料
+function goToLoactionPopup(e){
+	if (e.target.className !== 'data-list__item') return;
+	const lat = Number(e.target.dataset.lat);
+	const lng = Number(e.target.dataset.lng);
+	markerOpen(lat, lng);
 }
+dataList.addEventListener('click',goToLoactionPopup)

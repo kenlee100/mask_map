@@ -265,15 +265,14 @@ var map = L.map('js-map', {
     zoom: 10
 });
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    attribution: '作者 Ken || 設計師  '
 }).addTo(map);
 
 var markers = new L.MarkerClusterGroup().addTo(map);
 
 
 //設定marker
-
-function setMarker(){
+function addMarker(){
 	var popHtml=null;
 	// console.log(maskData);
 	
@@ -360,9 +359,12 @@ init()
 // 	console.log(this.dataset.lat,this.dataset.lng)
 // }
 function getCoordinates(){
+	
 	dataList.querySelectorAll('.data-list__item').forEach(function(item){
-		// setMarker(item.dataset.lat,item.dataset.lng)
+		
+		// addMarker(item.dataset.lat,item.dataset.lng)
 		item.addEventListener('click',function(){
+
 			map.setView(new L.latLng(this.dataset.lat,this.dataset.lng))
 			// L.marker([this.dataset.lat,this.dataset.lng]).addTo(map)
 			// 	.bindPopup('1234')
