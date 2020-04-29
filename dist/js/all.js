@@ -136,33 +136,60 @@ function domRender(data){
 	data.forEach(function(item){
 		var itemCoordinates = item.geometry.coordinates;
 		var itemContent = item.properties;
-		var itemStatus = (function(){
+		var adultStatus = (function(){
 			if (item.properties.mask_adult ===0){
 				return 'status-insufficient'
-			} else {
+			} else if (item.properties.mask_adult >= 1 && item.properties.mask_adult < 200) {
 				return 'status-little'
+			} else if (item.properties.mask_adult >= 200) {
+				return 'status-sufficient'
+			}
+		}());
+		var childStatus = (function(){
+			if (item.properties.mask_child ===0){
+				return 'status-insufficient'
+			} else if (item.properties.mask_child >= 1 && item.properties.mask_child<200) {
+				return 'status-little'
+			} else if (item.properties.mask_child >= 200) {
+				return 'status-sufficient'
 			}
 		}())
 		// var item_mask_child = item.properties.mask_child===0? '無口罩':'';
 		html+=`
 				<div class="data-list__item" data-lat="${itemCoordinates[1]}" data-lng="${itemCoordinates[0]}">
-					<div class="item-content">
-						<h3 class="item-content__title">${itemContent.name}</h3>
-						<div class="item-content__info">${itemContent.address}</div>
-						<div class="item-content__info">${itemContent.phone}</div>
-						<div class="item-content__info">
-							<div class="${itemStatus}">
-								<span class="title">成人口罩數量:</span>
-								<span class="number">${itemContent.mask_adult}</span>片
+					<div class="info-content">
+						<div class="info-content__item">
+							<div class="mask-status">
+								<div class="mask-status__item">
+									<div class="status ${adultStatus}">
+										<h4 class="title">成人口罩數量:</h4>
+										<span class="number">${itemContent.mask_adult}</span>片
+									</div>
+								</div>
+								<div class="mask-status__item">
+									<div class="status ${childStatus}">
+										<h4 class="title">小孩口罩數量:</h4>
+										<span class="number">${itemContent.mask_child}</span>片
+									</div>
+								</div>
 							</div>
-
-							<div class="${itemStatus}">
-								<span class="title">小孩口罩數量:</span>
-								<span class="number">${itemContent.mask_child}</span>片
-							</div>
-
 						</div>
-						<div class="item-content__info">${judgmentData(itemContent.mask_adult,'無口罩')}</div>
+						<div class="info-group">
+							<h3 class="info-group__title">${itemContent.name}</h3>
+							<div class="info-group__item">
+								<div class="title">地址</div>
+								<div class="content">${itemContent.address}</div>
+							</div>
+							<div class="info-group__item">
+								<div class="title">電話</div>
+								<div class="content">${itemContent.phone}</div>
+							</div>
+							<div class="info-group__item">
+								<div class="title">備註</div>
+								<div class="content">${itemContent.note}</div>
+							</div>
+							<div class="info-group__item">${judgmentData(itemContent.mask_adult,'無口罩')}</div>
+						</div>
 					</div>
 				</div>
 				`
